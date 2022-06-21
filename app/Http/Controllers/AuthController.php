@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\AppBaseController;
 use App\Http\Controllers\Controller;
@@ -11,7 +11,7 @@ use App\Http\Resources\UserResource;
 use Illuminate\{Http\Request, Support\Facades\Auth};
 
 
-class AuthController extends Controller
+class AuthController extends AppBaseController
 {
 
     /**
@@ -123,7 +123,7 @@ class AuthController extends Controller
      *                 type="string",
      *              ),
      *          )
-     *      )
+     *      ),
      *      @OA\Response(
      *          response=200,
      *          description="successful operation",
@@ -165,7 +165,7 @@ class AuthController extends Controller
         return $this->sendResponse(new UserResource($user), __('auth.verification.registered_account'));
     }
 
-/**
+    /**
      * @OA\Get(
      *      path="/auth/logout",
      *      operationId="logout",

@@ -20,6 +20,13 @@ use Illuminate\Routing\Controller as BaseController;
  *         url="http://www.apache.org/licenses/LICENSE-2.0.html"
  *     )
  * )
+ * @OA\SecurityScheme(
+ *   securityScheme="token",
+ *   type="http",
+ *   name="bearerAuth",
+ *   in="header",
+ *   scheme="bearer",
+ * )
  */
 
 class Controller extends BaseController
