@@ -230,7 +230,7 @@ class PetController extends AppBaseController
      */
     public function destroy(int $petId)
     {
-        if (!Pet::where('id', $petId)->exist()) {
+        if (Pet::where('id', $petId)->doesntExist()) {
             return  response()->json('Pet not found', 404);
         }
         Pet::where('id', $petId)->delete();
