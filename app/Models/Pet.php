@@ -6,6 +6,7 @@ use App\Enum\StatusEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pet extends Model
@@ -20,12 +21,8 @@ class Pet extends Model
     protected $fillable = [
         'name',
         'status',
+        'photoUrls',
         'category_id',
-    ];
-
-    protected $casts = [
-
-        'status' => ['available', 'pending', 'sold']
     ];
 
     /**
@@ -39,8 +36,8 @@ class Pet extends Model
     /**
      * Get the tags of the pet.
      */
-    public function tags(): HasMany
+    public function tags(): BelongsToMany
     {
-        return $this->hasMany(Tag::class);
+        return $this->belongsToMany(Tag::class);
     }
 }

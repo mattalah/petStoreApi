@@ -173,7 +173,7 @@ class AuthController extends AppBaseController
      *      description="logout ",
      *      @OA\Response(
      *          response=200,
-     *          description="You are offline",
+     *          description="successful operation",
      *          @OA\JsonContent(
      *              @OA\Property(
      *                  property="result",

@@ -3,12 +3,10 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
 use Illuminate\Contracts\Validation\Validator;
-
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class UpdatePetRequest extends FormRequest
+class IndexBystatusPetRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,21 +26,11 @@ class UpdatePetRequest extends FormRequest
     public function rules()
     {
         return [
-            'id' => 'required|numeric',
-            'name' => 'required|string',
-            'photoUrls' => 'required|array',
-            'tags' => 'sometimes|array',
-            'tags.*.id' => 'required|numeric',
-            'tags.*.name' => 'required|string',
-            'category.id' =>  'sometimes|numeric',
-            'category.name' =>  'sometimes|string',
-            "photoUrls.*"  => 'sometimes|string|distinct',
-            'status' => 'sometimes|in:available, pending,sold'
+            'status' => 'required|in:available,pending,sold'
         ];
     }
-
     protected function failedValidation(Validator $validator)
     {
-        throw new HttpResponseException(response()->json('Validation exception', 405));
+        throw new HttpResponseException(response()->json('Invalid Status value', 400));
     }
 }

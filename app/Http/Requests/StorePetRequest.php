@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StorePetRequest extends FormRequest
 {
@@ -13,7 +15,7 @@ class StorePetRequest extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +26,19 @@ class StorePetRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            'name' => 'required|string',
+            'photoUrls' => 'required|array',
+            'tags' => 'sometimes|array',
+            'tags.*.id' => 'required|numeric',
+            'tags.*.name' => 'required|string',
+            'category.id' =>  'sometimes|numeric',
+            'category.name' =>  'sometimes|string',
+            "photoUrls.*"  => 'sometimes|string|distinct',
+            'status' => 'sometimes|in:available, pending,sold'
         ];
+    }
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json('Invalid input', 405));
     }
 }

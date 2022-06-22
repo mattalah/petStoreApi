@@ -53,10 +53,10 @@ class PetResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'photoUrls' => $this->photoUrls,
+            'photoUrls' => json_decode(@$this->photoUrls),
             'status' => $this->status,
-            'tags' =>  TagResource::collection($this->tags),
-            'category' =>  new CategoryResource($this->category),
+            'tags' =>  TagResource::collection(@$this->tags),
+            'category' =>   new CategoryResource(@$this->category),
         ];
     }
 }

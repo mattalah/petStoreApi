@@ -2,31 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\IndexBystatusPetRequest;
 use App\Http\Requests\StorePetRequest;
 use App\Http\Requests\UpdatePetRequest;
 use App\Http\Resources\PetResource;
+use App\Models\Category;
 use App\Models\Pet;
+use App\Models\Tag;
 
-class PetController extends Controller
+class PetController extends AppBaseController
 {
+
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *      path="/pet/findByStatus",
+     *      operationId="pet",
+     *      tags={"pet"},
+     *      description="Finds Pets by status",
+     *      @OA\RequestParam(
+     *          request="string",
+     *          @OA\JsonContent(
+     *               @OA\Obect(
+     *                  property="status"
+     *                  type="string",
+     *               ),
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="successful operation",
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                  property="result",
+     *                  type="object",
+     *                      @OA\Schema(
+     *                          schema="PetCollection",
+     *                          type="Array",
+     *                          title="PetCollection",
+     *                          @OA\Items(ref="#/components/schemas/PetCollection") 
+     *                      ),
+     *                      
+     *              ),
+     *          )
+     *       )
+     *     )
+     *
+     */
+
+    /**
+     * Display a listing of the pet by status.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function indexByStatus(IndexBystatusPetRequest $request)
     {
-        //
+        $input = $request->validated();
+        return response()->json(PetResource::collection(Pet::where('status', $input['status'])->get()));
     }
 
     /**
      * @OA\Post(
      *      path="/pet/",
      *      operationId="pet",
-     *      tags={"auth"},
-     *      description="pet ",
+     *      tags={"pet"},
+     *      description="Add a new prt to the store",
      *      @OA\RequestBody(
      *          request="object",
+     *          description="Pet object that needs to be added to the store",
      *          @OA\JsonContent(
      *               @OA\Schema(
      *                  schema="Pet",
@@ -38,7 +80,7 @@ class PetController extends Controller
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="You are offline",
+     *          description="successful operation",
      *          @OA\JsonContent(
      *              @OA\Property(
      *                  property="result",
@@ -66,54 +108,30 @@ class PetController extends Controller
     public function store(StorePetRequest $request)
     {
         $input = $request->validated();
-        $pet = Pet::create($input);
-        return $this->sendResponse(new PetResource($pet), __('pet.create_success'));
+        $pet = Pet::create([
+            'name' => $input['name'],
+            'status' => $input['status'],
+            'photoUrls' => json_encode($input['photoUrls']),
+        ]);
+        if (isset($input['category'])) {
+            $category = Category::create(['name' => $input['category']['name']]);
+            $pet->category()->associate($category);
+        }
+        if (!empty($input['tags'])) {
+            foreach ($input['tags'] as $tag) {
+                $tg = Tag::firstOrCreate(['name' => $tag['name']]);
+                $pet->tags()->attach($tg->id);
+            }
+        }
+        $pet->save();
+        return response()->json(new PetResource($pet));
     }
-
-    /**
-     * @OA\Get(
-     *      path="/pet/{id}",
-     *      operationId="pet",
-     *      tags={"auth"},
-     *      description="pet ",
-     *      @OA\Response(
-     *          response=200,
-     *          description="You are offline",
-     *          @OA\JsonContent(
-     *              @OA\Property(
-     *                  property="result",
-     *                  type="object",
-     *                      @OA\Schema(
-     *                          schema="PetResource",
-     *                          type="object",
-     *                          title="PetResource",
-     *                          @OA\Items(ref="#/components/schemas/PetResource") 
-     *                      ),
-     *                      
-     *              ),
-     *          )
-     *       )
-     *     )
-     *
-     */
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Pet  $pet
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Pet $pet)
-    {
-        return $this->sendResponse(new PetResource($pet), __('pet.display_content'));
-    }
-
 
     /**
      * @OA\Put(
      *      path="/pet/{id}",
      *      operationId="pet",
-     *      tags={"auth"},
+     *      tags={"pet"},
      *      description="pet ",
      *      @OA\RequestBody(
      *          request="object",
@@ -128,7 +146,7 @@ class PetController extends Controller
      *      ),
      *      @OA\Response(
      *          response=200,
-     *          description="You are offline",
+     *          description="successful operation",
      *          @OA\JsonContent(
      *              @OA\Property(
      *                  property="result",
@@ -153,21 +171,69 @@ class PetController extends Controller
      * @param  \App\Models\Pet  $pet
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdatePetRequest $request, Pet $pet)
+    public function update(UpdatePetRequest $request)
     {
         $input = $request->validated();
-        $pet->update($input);
-        return $this->sendResponse(new PetResource($pet), __('pet.update_success'));
+        if (!Pet::where('id', $input['id'])->exist()) {
+            return  response()->json('Pet not found', 404);
+        }
+        $pet = Pet::where('id', $input['id'])->first();
+        $pet->update([
+            'name' => $input['name'],
+            'status' => $input['status'],
+            'photoUrls' => json_encode($input['photoUrls']),
+        ]);
+        if ($pet->category()->exists()) {
+            $pet->category()->dissociate();
+        }
+        if (isset($input['category'])) {
+            $category = Category::create(['name' => $input['category']['name']]);
+            $pet->category()->associate($category);
+        }
+        if ($pet->tags()->exists()) {
+            $pet->tags()->detach();
+        }
+        if (!empty($input['tags'])) {
+            foreach ($input['tags'] as $tag) {
+                $tg = Tag::firstOrCreate(['name' => $tag['name']]);
+                $pet->tags()->attach($tg->id);
+            }
+        }
+        $pet->save();
+        return  response()->json(new PetResource($pet));
     }
 
     /**
+     * @OA\Delete(
+     *      path="/pet/{id}",
+     *      operationId="pet",
+     *      tags={"pet"},
+     *      description="delete pet",
+     *      @OA\Response(
+     *          response=200,
+     *          description="successful operation",
+     *          @OA\JsonContent(
+     *              @OA\Property(
+     *                  property="message",
+     *                  type="string",
+     *                      
+     *              ),
+     *          )
+     *       )
+     *     )
+     *
+     */
+    /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Pet  $pet
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Pet $pet)
+    public function destroy(int $petId)
     {
-        //
+        if (!Pet::where('id', $petId)->exist()) {
+            return  response()->json('Pet not found', 404);
+        }
+        Pet::where('id', $petId)->delete();
+        return response()->json('deleted done');
     }
 }

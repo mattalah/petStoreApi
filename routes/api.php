@@ -21,4 +21,9 @@ Route::group(['namespace' => 'Auth', 'prefix' => 'auth'], function () {
     Route::get('logout', [AuthController::class, 'logout']);
 });
 
-Route::apiResource('pet', PetController::class);
+Route::group(['namespace' => 'Pet', 'prefix' => 'pet'], function () {
+    Route::get('findByStatus', [PetController::class, 'indexByStatus'])->middleware('auth:sanctum');
+    Route::post('', [PetController::class, 'store'])->middleware('auth:sanctum');
+    Route::put('{petId}', [PetController::class, 'update'])->middleware('auth:sanctum');
+    Route::delete('{petId}', [PetController::class, 'destroy'])->middleware('auth:sanctum');
+});
